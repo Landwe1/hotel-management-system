@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receptionist Desk</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 15px; border-radius: 6px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin: 0; color: #666; font-size: 14px; }
+        .stat-card p { margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #2c3e50; }
+        
+        /* Room Grid Layout */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .room-card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 5px solid #ccc; text-align: center; }
+        
+        /* Status Boundary Borders */
+        .status-AVAILABLE { border-top-color: #2ecc71; } /* Green */
+        .status-OCCUPIED { border-top-color: #e74c3c; }  /* Red */
+        .status-DIRTY { border-top-color: #f1c40f; }     /* Yellow */
+        .status-MAINTENANCE { border-top-color: #95a5a6; } /* Grey */
+
+        .room-number { font-size: 20px; font-weight: bold; margin-bottom: 2px; }
+        .room-tier { font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; }
+        
+        /* Badge Styles for Rooms and Bookings */
+        .badge { display: inline-block; padding: 3px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; color: white; text-transform: uppercase; }
+        .badge-AVAILABLE, .badge-CHECKED_IN { background: #2ecc71; }
+        .badge-OCCUPIED { background: #e74c3c; }
+        .badge-DIRTY { background: #f1c40f; color: #333; }
+        .badge-MAINTENANCE { background: #95a5a6; }
+        .badge-PENDING { background: #3498db; } /* Blue for reserved/pending arrivals */
+        
+        .btn-nav { display: inline-block; background: #2c3e50; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; margin-bottom: 15px; font-weight: bold; }
+        
+        /* Manifest Table Layout */
+        .manifest-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto; }
+        .manifest-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .manifest-table th { background: #2c3e50; color: white; padding: 12px; font-size: 14px; }
+        .manifest-table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'manager_home' %}" class="btn-nav">⬅️ Back to Central Router</a>
+        <h1>🛎️ Front Desk Reception Console</h1>
+
+        <div class="stats-bar">
+            <div class="stat-card"><h3>Total System Rooms</h3><p>{{ total_rooms }}</p></div>
+            <div class="stat-card"><h3 style="color: #2ecc71;">Ready for Check-In</h3><p>{{ available_rooms }}</p></div>
+            <div class="stat-card"><h3 style="color: #e74c3c;">Occupied</h3><p>{{ occupied_rooms }}</p></div>
+            <div class="stat-card"><h3 style="color: #f1c40f;">Dirty / Housekeeping</h3><p>{{ dirty_rooms }}</p></div>
+        </div>
+
+        <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px;">
+            <h3 style="margin-top: 0; color: #2c3e50;">⚡ Quick Guest Check-In Registration</h3>
+            <form action="{% url 'create_walkin_booking' %}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+                {% csrf_token %}
+                
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Assign Room:</label>
+                    <select name="room_id" required style="width:100%; padding: 8px; border-radius:4px; border:1px solid #ccc; background-color: #fff;">
+                        <option value="">-- Choose Available Room --</option>
+                        {% for rm in available_dropdown %}
+                            <option value="{{ rm.id }}">Room {{ rm.room_number }} ({{ rm.tier.name }} - K{{ rm.tier.base_price }}/night)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">First Name:</label>
+                    <input type="text" name="first_name" required style="width:100%; padding: 7px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Last Name:</label>
+                    <input type="text" name="last_name" required style="width:100%; padding: 7px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Phone Number:</label>
+                    <input type="text" name="phone" required style="width:100%; padding: 7px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Check In Date:</label>
+                    <input type="date" name="check_in_date" required style="width:100%; padding: 6px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Check Out Date:</label>
+                    <input type="date" name="check_out_date" required style="width:100%; padding: 6px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div>
+                    <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Cash Amount Paid (K):</label>
+                    <input type="number" name="amount_paid" step="0.01" value="0.00" required style="width:100%; padding: 7px; border-radius:4px; border:1px solid #ccc;">
+                </div>
+
+                <div style="padding-bottom: 8px;">
+                    <label style="font-weight: bold; font-size: 13px; color: #2ecc71; cursor: pointer;">
+                        <input type="checkbox" name="is_paid"> 💸 Payment Settled
+                    </label>
+                </div>
+
+                <div>
+                    <button type="submit" style="width: 100%; background: #2ecc71; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                        🎟️ Check-In Guest
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <h2>Hotel Room Matrix Floor-by-Floor</h2>
+        <div class="room-grid">
+            {% for room in rooms %}
+                <div class="room-card status-{{ room.status }}">
+                    <div class="room-number">Room {{ room.room_number }}</div>
+                    <div class="room-tier">{{ room.tier.name }}</div>
+                    <span class="badge badge-{{ room.status }}">{{ room.get_status_display }}</span>
+                    <div style="font-size: 11px; color: #95a5a6; margin-top: 8px;">Floor {{ room.floor }} • Max Pax: {{ room.max_capacity }}</div>
+                    
+                    {% if room.status == 'DIRTY' %}
+                        <div style="margin-top: 10px;">
+                            <a href="{% url 'clean_room_complete' room.id %}" 
+                               style="display: block; background: #2ecc71; color: white; padding: 6px; font-size: 11px; text-decoration: none; border-radius: 4px; font-weight: bold; text-transform: uppercase;">
+                                ✅ Mark Cleaned
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p style="grid-column: 1/-1; text-align: center; color: #7f8c8d; font-style: italic;">
+                    No rooms found! Go to the Django Admin panel to add some Room Tiers and Rooms.
+                </p>
+            {% endfor %}
+        </div>
+
+        <br><br>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+
+        <h2>📅 Active Manifest & Incoming Reservations</h2>
+        <div class="manifest-container">
+            <table class="manifest-table">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Room Assignation</th>
+                        <th>Stay Duration</th>
+                        <th>Status Badge</th>
+                        <th>Account Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td style="font-weight: bold; color: #2c3e50;">{{ booking.guest_display_name }}</td>
+                            <td>Room {{ booking.room.room_number }} ({{ booking.room.tier.name }})</td>
+                            <td style="color: #555; font-size: 13px;">
+                                📅 {{ booking.check_in_date }} to {{ booking.check_out_date }}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                            </td>
+                            <td style="font-size: 13px;">
+                                <div style="margin-bottom: 4px;">Total Bill: <strong>K{{ booking.total_amount }}</strong></div>
+                                <div style="color: #2ecc71; margin-bottom: 4px;">Paid: <strong>K{{ booking.amount_paid }}</strong></div>
+                                
+                                {% if booking.is_paid or booking.remaining_balance <= 0 %}
+                                    <span style="color: #2ecc71; font-weight: bold; font-size: 11px; background: #e8f5e8; padding: 2px 6px; border-radius: 4px;">
+                                        💸 Settled
+                                    </span>
+                                {% else %}
+                                    <span style="color: #e74c3c; font-weight: bold; font-size: 11px; background: #ffebee; padding: 2px 6px; border-radius: 4px;">
+                                        ⚠️ Balance: K{{ booking.remaining_balance }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if booking.status == 'CHECKED_IN' %}
+                                    <a href="{% url 'checkout_guest' booking.id %}" 
+                                       onclick="return confirm('Are you sure this guest is clearing balance and checking out?');"
+                                       style="display: inline-block; background: #e74c3c; color: white; padding: 6px 12px; font-size: 12px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+                                        🔑 Check Out
+                                    </a>
+                                {% else %}
+                                    <span style="color: #95a5a6; font-size: 12px; font-style: italic;">No actions pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" style="padding: 20px; text-align: center; color: #7f8c8d; font-style: italic;">
+                                No active stays or incoming reservations found for today.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
+

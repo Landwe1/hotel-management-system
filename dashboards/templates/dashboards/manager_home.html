@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Management Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div style="background: #2c3e50; color: #fff; padding: 15px; text-align: center; border-radius: 6px;">
+        <strong>📊 Presentation Mode (Admin Override):</strong> Switch Dashboard View:
+        <a href="?view=RECEPTIONIST" style="color: #3498db; margin: 0 10px; font-weight: bold;">Reception Desk</a> |
+        <a href="?view=ACCOUNTANT" style="color: #2ecc71; margin: 0 10px; font-weight: bold;">Accounts & Revenue</a> |
+        <a href="?view=CHEF" style="color: #e67e22; margin: 0 10px; font-weight: bold;">Kitchen / Chef</a> |
+        <a href="?view=STORES_MANAGER" style="color: #9b59b6; margin: 0 10px; font-weight: bold;">Stores Inventory</a>
+    </div>
+
+    <h1>Welcome to the Executive Control Panel</h1>
+    <p>Logged in as: <strong>{{ request.user.phone_number }}</strong> ({{ request.user.get_role_display }})</p>
+
+    <div class="card">
+        <h3>Operational Overview</h3>
+        <p>This panel has full read/write access across all system metrics, performance targets, and hotel occupancy statistics.</p>
+    </div>
+
+    <p><a href="{% url 'logout' %}" style="color: red;">Log out of system</a></p>
+</body>
+</html>
+
