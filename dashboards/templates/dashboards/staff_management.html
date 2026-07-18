@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Staff Management</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: #f4f6f9; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .header-section h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #34495e;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #2c3e50;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .panel h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .btn-submit:hover {
+            background: #219653;
+        }
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #f1f2f6;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-manager { background: #fdedec; color: #c0392b; }
+        .badge-receptionist { background: #e8f4fd; color: #2980b9; }
+        .badge-accountant { background: #eafaf1; color: #27ae60; }
+        .badge-chef { background: #fef5e7; color: #d35400; }
+        .badge-stores { background: #f4ecf7; color: #8e44ad; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section">
+        <div>
+            <h1>Staff Management</h1>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d;">Register new personnel and view current active staff members.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboards:manager_home' %}" class="btn">Back to Control Panel</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div style="margin-bottom: 20px;">
+            {% for message in messages %}
+                <div style="padding: 12px; border-radius: 4px; margin-bottom: 10px; font-weight: bold; 
+                    {% if message.tags == 'error' %} background: #fdedec; color: #e74c3c; {% else %} background: #eafaf1; color: #2ecc71; {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container">
+        <div class="panel">
+            <h2>Register Staff Member</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Phone Number (Username)</label>
+                    <input type="text" name="phone_number" class="form-control" placeholder="+260..." required>
+                </div>
+
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" class="form-control" placeholder="First Name">
+                </div>
+
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" class="form-control" placeholder="Last Name">
+                </div>
+
+                <div class="form-group">
+                    <label>Assigned Role</label>
+                    <select name="role" class="form-control" required>
+                        {% for role_code, role_name in roles %}
+                            {% if role_code != 'GUEST' %}
+                                <option value="{{ role_code }}">{{ role_name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Initial Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="Set temporary password" required>
+                </div>
+
+                <button type="submit" class="btn-submit">Add Staff Member</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h2>Current Hotel Staff</h2>
+            {% if staff_members %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Phone Number</th>
+                            <th>Name</th>
+                            <th>System Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in staff_members %}
+                            <tr>
+                                <td><strong>{{ member.phone_number }}</strong></td>
+                                <td>
+                                    {% if member.first_name or member.last_name %}
+                                        {{ member.first_name }} {{ member.last_name }}
+                                    {% else %}
+                                        <span style="color: #95a5a6; font-style: italic;">Not provided</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if member.role in 'MANAGER EXECUTIVE' %}badge-manager
+                                        {% elif member.role == 'RECEPTIONIST' %}badge-receptionist
+                                        {% elif member.role == 'ACCOUNTANT' %}badge-accountant
+                                        {% elif member.role == 'CHEF' %}badge-chef
+                                        {% elif member.role == 'STORES_MANAGER' %}badge-stores
+                                        {% endif %}">
+                                        {{ member.get_role_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color: #7f8c8d;">No staff members registered in the system yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

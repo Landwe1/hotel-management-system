@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'hotel_management',
     'rooms',
     'stock_overview',
+    'finance',
 ]
 
 MIDDLEWARE = [

@@ -44,8 +44,8 @@
 </head>
 <body>
     <div class="container">
-        <a href="{% url 'manager_home' %}" class="btn-nav">⬅️ Back to Central Router</a>
-        <h1>🛎️ Front Desk Reception Console</h1>
+        <a href="{% url 'dashboards:manager_home' %}" class="btn-nav">Back to Central Router</a>
+        <h1>Front Desk Reception Console</h1>
 
         <div class="stats-bar">
             <div class="stat-card"><h3>Total System Rooms</h3><p>{{ total_rooms }}</p></div>
@@ -55,8 +55,8 @@
         </div>
 
         <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 25px;">
-            <h3 style="margin-top: 0; color: #2c3e50;">⚡ Quick Guest Check-In Registration</h3>
-            <form action="{% url 'create_walkin_booking' %}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+            <h3 style="margin-top: 0; color: #2c3e50;">Quick Guest Check-In Registration</h3>
+            <form action="{% url 'dashboards:create_walkin_booking' %}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
                 {% csrf_token %}
                 
                 <div>
@@ -101,13 +101,13 @@
 
                 <div style="padding-bottom: 8px;">
                     <label style="font-weight: bold; font-size: 13px; color: #2ecc71; cursor: pointer;">
-                        <input type="checkbox" name="is_paid"> 💸 Payment Settled
+                        <input type="checkbox" name="is_paid"> Payment Settled
                     </label>
                 </div>
 
                 <div>
                     <button type="submit" style="width: 100%; background: #2ecc71; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                        🎟️ Check-In Guest
+                        Check-In Guest
                     </button>
                 </div>
             </form>
@@ -124,9 +124,9 @@
                     
                     {% if room.status == 'DIRTY' %}
                         <div style="margin-top: 10px;">
-                            <a href="{% url 'clean_room_complete' room.id %}" 
+                            <a href="{% url 'dashboards:clean_room_complete' room.id %}" 
                                style="display: block; background: #2ecc71; color: white; padding: 6px; font-size: 11px; text-decoration: none; border-radius: 4px; font-weight: bold; text-transform: uppercase;">
-                                ✅ Mark Cleaned
+                                Mark Cleaned
                             </a>
                         </div>
                     {% endif %}
@@ -141,7 +141,7 @@
         <br><br>
         <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
 
-        <h2>📅 Active Manifest & Incoming Reservations</h2>
+        <h2>Active Manifest & Incoming Reservations</h2>
         <div class="manifest-container">
             <table class="manifest-table">
                 <thead>
@@ -160,7 +160,7 @@
                             <td style="font-weight: bold; color: #2c3e50;">{{ booking.guest_display_name }}</td>
                             <td>Room {{ booking.room.room_number }} ({{ booking.room.tier.name }})</td>
                             <td style="color: #555; font-size: 13px;">
-                                📅 {{ booking.check_in_date }} to {{ booking.check_out_date }}
+                                {{ booking.check_in_date }} to {{ booking.check_out_date }}
                             </td>
                             <td>
                                 <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
@@ -171,20 +171,20 @@
                                 
                                 {% if booking.is_paid or booking.remaining_balance <= 0 %}
                                     <span style="color: #2ecc71; font-weight: bold; font-size: 11px; background: #e8f5e8; padding: 2px 6px; border-radius: 4px;">
-                                        💸 Settled
+                                        Settled
                                     </span>
                                 {% else %}
                                     <span style="color: #e74c3c; font-weight: bold; font-size: 11px; background: #ffebee; padding: 2px 6px; border-radius: 4px;">
-                                        ⚠️ Balance: K{{ booking.remaining_balance }}
+                                        Balance: K{{ booking.remaining_balance }}
                                     </span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if booking.status == 'CHECKED_IN' %}
-                                    <a href="{% url 'checkout_guest' booking.id %}" 
+                                    <a href="{% url 'dashboards:checkout_guest' booking.id %}" 
                                        onclick="return confirm('Are you sure this guest is clearing balance and checking out?');"
                                        style="display: inline-block; background: #e74c3c; color: white; padding: 6px 12px; font-size: 12px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                                        🔑 Check Out
+                                        Check Out
                                     </a>
                                 {% else %}
                                     <span style="color: #95a5a6; font-size: 12px; font-style: italic;">No actions pending</span>

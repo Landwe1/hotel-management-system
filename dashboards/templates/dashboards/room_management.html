@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Room & Pricing Management</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            background: #f4f6f9; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .header-section h1 { margin: 0; color: #2c3e50; }
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #34495e;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .panel h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .btn-submit {
+            padding: 8px 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #f1f2f6;
+            font-size: 14px;
+        }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-available { background: #eafaf1; color: #27ae60; }
+        .badge-occupied { background: #e8f4fd; color: #2980b9; }
+        .badge-dirty { background: #fef5e7; color: #d35400; }
+        .badge-maintenance { background: #fdedec; color: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section">
+        <div>
+            <h1>Room & Pricing Management</h1>
+            <p style="margin: 5px 0 0 0; color: #7f8c8d;">Set base tier rates, add rooms, and adjust operational room statuses.</p>
+        </div>
+        <div>
+            <a href="{% url 'dashboards:manager_home' %}" class="btn">Back to Control Panel</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div style="margin-bottom: 20px;">
+            {% for message in messages %}
+                <div style="padding: 12px; border-radius: 4px; margin-bottom: 10px; font-weight: bold; 
+                    {% if message.tags == 'error' %} background: #fdedec; color: #e74c3c; {% else %} background: #eafaf1; color: #2ecc71; {% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container">
+        <div class="panel">
+            <h2>Room Tier Base Rates</h2>
+            {% if tiers %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tier Name</th>
+                            <th>Base Rate (ZMK)</th>
+                            <th>Update Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tier in tiers %}
+                            <tr>
+                                <td>
+                                    <strong>{{ tier.name }}</strong>
+                                    <div style="font-size: 12px; color: #7f8c8d;">{{ tier.rooms.count }} rooms</div>
+                                </td>
+                                <td>{{ tier.base_price }}</td>
+                                <td>
+                                    <form method="POST" action="{% url 'dashboards:update_tier_price' tier.id %}" style="display: flex; gap: 5px;">
+                                        {% csrf_token %}
+                                        <input type="number" step="0.01" name="base_price" value="{{ tier.base_price }}" class="form-control" style="width: 100px;" required>
+                                        <button type="submit" class="btn-submit">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="color: #7f8c8d;">No room tiers created yet.</p>
+            {% endif %}
+
+            <hr style="border: 0; border-top: 1px solid #ecf0f1; margin: 20px 0;">
+
+            <h3>Create Room Tier</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action_type" value="add_tier">
+                <div class="form-group">
+                    <label>Tier Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Executive Suite" required>
+                </div>
+                <div class="form-group">
+                    <label>Base Price per Night (ZMK)</label>
+                    <input type="number" step="0.01" name="base_price" class="form-control" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" name="description" class="form-control" placeholder="Optional notes">
+                </div>
+                <button type="submit" class="btn-submit" style="width: 100%;">Create New Tier</button>
+            </form>
+        </div>
+
+        <div class="panel">
+            <h2>Register New Room</h2>
+            {% if tiers %}
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_type" value="add_room">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Room Number</label>
+                            <input type="text" name="room_number" class="form-control" placeholder="e.g., 101" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Room Tier</label>
+                            <select name="tier_id" class="form-control" required>
+                                {% for tier in tiers %}
+                                    <option value="{{ tier.id }}">{{ tier.name }} (ZMK {{ tier.base_price }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label>Floor</label>
+                            <input type="number" name="floor" class="form-control" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Guest Capacity</label>
+                            <input type="number" name="max_capacity" class="form-control" value="2" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="width: 100%;">Add Room</button>
+                </form>
+            {% else %}
+                <p style="color: #c0392b;">Please create at least one Room Tier before adding rooms.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Room Roster & Operational Status</h2>
+        {% if rooms %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Room No.</th>
+                        <th>Tier</th>
+                        <th>Floor</th>
+                        <th>Capacity</th>
+                        <th>Current Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                        <tr>
+                            <td><strong>Room {{ room.room_number }}</strong></td>
+                            <td>{{ room.tier.name }}</td>
+                            <td>Floor {{ room.floor }}</td>
+                            <td>{{ room.max_capacity }} guests</td>
+                            <td>
+                                <span class="badge 
+                                    {% if room.status == 'AVAILABLE' %}badge-available
+                                    {% elif room.status == 'OCCUPIED' %}badge-occupied
+                                    {% elif room.status == 'DIRTY' %}badge-dirty
+                                    {% elif room.status == 'MAINTENANCE' %}badge-maintenance
+                                    {% endif %}">
+                                    {{ room.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <form method="POST" style="display: flex; gap: 5px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action_type" value="update_room_status">
+                                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                                    <select name="status" class="form-control" style="padding: 4px; width: 140px;">
+                                        {% for code, name in room_statuses %}
+                                            <option value="{{ code }}" {% if room.status == code %}selected{% endif %}>{{ name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn-submit" style="padding: 4px 8px;">Set</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="color: #7f8c8d;">No rooms registered yet.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
